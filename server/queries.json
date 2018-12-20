@@ -1,0 +1,8 @@
+{
+  "ed0f276d2de47f9949286ced235dbcab": "create extension if not exists \"uuid-ossp\"; create table if not exists todos ( created_at  timestamp   default now(), todo_id     uuid        primary key default uuid_generate_v4(), title       text        not null default '', done        boolean     default false )",
+  "8dbd934db66a7aaf28a1b9bd26324491": "select * from todos order by created_at",
+  "bf758de6ab6ca62339b4162655c7f539": "insert into todos ( title ) values ( $(title) ) returning *",
+  "2e7f598aa485d72d9edc4236081515bf": "update todos set done = $(done) where todo_id = $(todo_id) returning *",
+  "64027152cc802ac022ce0e16086ff903": "update todos set title = $(title) where todo_id = $(todo_id)",
+  "2fbd96ba83d1f674a7f0f67c02776aa5": "delete from todos where todo_id = $(todo_id)"
+}

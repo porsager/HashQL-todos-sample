@@ -1,0 +1,22 @@
+{
+  "name": "todoey",
+  "version": "0.0.0",
+  "description": "A sample showcasing ey",
+  "main": "server.js",
+  "dependencies": {
+    "ey": "0.1.6",
+    "pg-promise": "8.5.4"
+  },
+  "devDependencies": {
+    "mithril": "2.0.0-rc.3",
+    "rollup": "0.68.1",
+    "rollup-plugin-node-resolve": "4.0.0",
+    "wright": "2.0.0-beta7"
+  },
+  "scripts": {
+    "dev": "NODE_ENV=development wright app/index.js -r 'm.redraw' -e 'node server;server/**'",
+    "start": "npm run build; wright app/index.html -e 'node server'",
+    "build": "node scripts/build.js"
+  },
+  "author": "Rasmus Porsager <rasmus@porsager.com>"
+}
