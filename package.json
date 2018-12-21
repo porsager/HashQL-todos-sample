@@ -13,10 +13,10 @@
     "mithril": "2.0.0-rc.3",
     "rollup": "0.68.1",
     "rollup-plugin-node-resolve": "4.0.0",
-    "wright": "2.0.0-beta7"
+    "wright": "2.0.0-beta10"
   },
   "scripts": {
-    "dev": "NODE_ENV=development wright app/index.js -r 'm.redraw' -e 'node server;server/**'",
+    "dev": "wright app/index.js -d 1 -r \"m.redraw\" -e \"node server;server/**\"",
     "start": "npm run build; wright app/index.html -e 'node server'",
     "build": "node scripts/build.js"
   },

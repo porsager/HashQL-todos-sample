@@ -1,11 +1,13 @@
 # Todoey - A todo sample using Ey
 
-To get started you need a local postgres server, node and npm
+To get started you need a local postgres server, node and npm.
 
 ```
 npm install
 createdb todoey
 ```
+
+Check connection details in `server/index.js`
 
 ### To start in dev mode run 
 ```
