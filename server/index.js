@@ -1,10 +1,12 @@
-const http = require('http')
 const Ey = require('ey/server')
 const Pgp = require('pg-promise')
+const express = require('express')
+const bodyParser = require('body-parser')
 const queries = require('./queries.json')
 
 const pgp = Pgp()
     , db = pgp('postgres://localhost/todoey')
+    , app = express()
     , port = process.env.PORT || 5000
     , dev = process.env.NODE_ENV === 'development' ? true : undefined
 
@@ -15,33 +17,10 @@ const ey = Ey({
     : q => queries[q.sql]
 })
 
-const server = http.createServer((req, res) => {
-  if (req.url !== '/sql' && req.method !== 'POST')
-    return res.end('OK')
+app.post('/sql', bodyParser.json(), (req, res, next) =>
+  ey(req.body)
+    .then(data => res.json(data))
+    .catch(err => res.status(500).json({ error: err.message || err.toString() }))
+)
 
-  let body = ''
-  req.on('data', chunk => { body += chunk })
-  req.on('end', () => {
-    parse(body)
-    .then(ey)
-    .then(data => res.end(JSON.stringify(data)))
-    .catch(err => {
-      res.statusCode = 500
-      res.end(JSON.stringify({ message: err.message, stack: dev && err.stack, error: err }))
-    })
-  })
-})
-
-server.listen(port)
-server.on('listening', () => console.log('Listening on', port))
-
-function parse(string) {
-  return new Promise((resolve, reject) => {
-    try {
-      resolve(JSON.parse(string))
-    } catch (e) {
-      console.log('wwaaaat', e)
-      reject(e)
-    }
-  })
-}
+app.listen(port, () => console.log('Listening on', port))
