@@ -7,7 +7,10 @@ npm install
 createdb todoey
 ```
 
-Check connection details in `server/index.js`
+The default postgres connection is set to `postgres://localhost` if you need to connect with a specific user you can add a `.env` file with 
+```
+POSTGRES_URL=postgres://user:pass@localhost:5432/todoey
+```
 
 ### To start in dev mode run 
 ```
