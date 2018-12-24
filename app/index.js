@@ -1,9 +1,12 @@
+import b from 'bss'
+import '/style.js'
 import m from 'mithril'
 import api from './api.js'
 
 window.m = m
 
 let todos
+  , focused = false
 
 function init() {
   api.tx(t => [
@@ -85,8 +88,14 @@ m.mount(document.body, {
   oninit: init,
 
   view: () =>
-    m('main',
-      m('h1', 'Todos'),
+    m('main' + b`
+      d flex
+      fd column
+      jc center
+      ai center
+      ta center
+    `,
+      m('h1', 'Todoey'),
 
       m('p',
         !todos
@@ -95,26 +104,69 @@ m.mount(document.body, {
             ? 'No todos yet'
             : todos.length + ' todos'),
 
-      todos && todos.length > 0 && m('ul',
+      todos && todos.length > 0 && m('ul' + b`
+        list-style none
+        p 0
+        width 100%
+        max-width 480
+      `,
         todos.map(({ todo_id, title, done }) =>
-          m('li',
-            m('input', {
+          m('li' + b`
+            d flex
+            ai center
+            p 8
+            m 4 0
+            br 3
+            bc ${ focused === todo_id && 'hsl(0, 0%, 95%)' }
+          `,
+            m('input' + b`
+              m 8
+            `, {
               type: 'checkbox',
+              onfocus: () => focused = todo_id,
+              onblur: () => focused = false,
               checked: Boolean(done),
               onchange: (e) => setDone(todo_id, e.target.checked)
             }),
-            m('input', {
+            m('input' + b`
+              d block
+              border none
+              p 4 8
+              fs 18
+              w 100%
+              bc white
+              br 4
+              text-decoration ${ done && 'line-through' }
+            `.$focus`
+              border none
+              outline none
+            `, {
+              onfocus: () => focused = todo_id,
+              onblur: () => focused = false,
               onchange: (e) => edit(todo_id, e.target.value),
               value: title
             }),
-            m('button', {
+            m('button' + b`
+              border none
+              bc transparent
+              w 24
+              h 24
+              m 4 8
+              background-image url('/images/trash.svg')
+              background-size 100% 100%
+            `, {
+              onfocus: () => focused = todo_id,
+              onblur: () => focused = false,
               onclick: () => remove(todo_id)
-            }, 'x')
+            }, )
           )
         )
       ),
 
-      m('form', {
+      m('form' + b`
+        d flex
+        m 20 0
+      `, {
         onsubmit: e => {
           e.preventDefault()
           add(e.target.elements.title.value).then(() =>
@@ -122,10 +174,29 @@ m.mount(document.body, {
           )
         }
       },
-        m('input', {
-          name: 'title'
+        m('input' + b`
+          d block
+          fs 18
+          p 4 8
+          h 32
+          br 3 0 0 3
+          border 1px solid gray
+        `, {
+          name: 'title',
+          autocomplete: 'off'
         }),
-        m('button', 'add')
+        m('button' + b`
+          tt uppercase
+          bc gray
+          h 100%
+          p 4 16
+          h 42
+          c white
+          br 0 3 3 0
+          border none
+          fs 14
+          fw bold
+        `, 'add')
       )
     )
 

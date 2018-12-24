@@ -5,6 +5,7 @@
   "main": "server.js",
   "dependencies": {
     "body-parser": "1.18.3",
+    "bss": "1.5.1",
     "express": "4.16.4",
     "ey": "0.1.6",
     "pg-promise": "8.5.4"
