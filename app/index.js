@@ -1,9 +1,8 @@
-/* global sql */
-
 import b from 'bss'
 import './style.js'
 import m from 'mithril'
 import api from './api.js'
+import { sql } from 'hashql'
 
 window.m = m
 
@@ -21,7 +20,7 @@ function init() {
         title       text        not null default '',
         done        boolean     default false
       )
-      `),
+    `),
     t.any(sql`
       select * from todos
       order by created_at

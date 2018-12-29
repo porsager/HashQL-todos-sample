@@ -2245,8 +2245,6 @@
     request: data => m.request('http://localhost:5000/sql', { method: 'POST', data })
   });
 
-  /* global sql */
-
   window.m = m;
 
   let todos
@@ -2254,8 +2252,8 @@
 
   function init() {
     api.tx(t => [
-      t.none('ed0f276d2de47f9949286ced235dbcab'),
-      t.any('8dbd934db66a7aaf28a1b9bd26324491')
+      t.none("ed0f276d2de47f9949286ced235dbcab"),
+      t.any("8dbd934db66a7aaf28a1b9bd26324491")
     ])
     .then(([, t]) => todos = t)
     .catch(alert);
@@ -2264,7 +2262,7 @@
   function add$1(title) {
     const todo = { title };
     todos.push(todo);
-    return api.one('bf758de6ab6ca62339b4162655c7f539', { title })
+    return api.one("bf758de6ab6ca62339b4162655c7f539", { title })
     .then(t => Object.assign(todo, t))
     .catch(err => {
       window.alert(err);
@@ -2275,7 +2273,7 @@
   function setDone(todo_id, done) {
     const todo = todos.find(t => t.todo_id === todo_id);
     todo.done = done;
-    return api.one('2e7f598aa485d72d9edc4236081515bf', { todo_id, done })
+    return api.one("2e7f598aa485d72d9edc4236081515bf", { todo_id, done })
     .then(({ done }) => todo.done = done)
     .catch(() => todo.done = !done)
   }
@@ -2284,7 +2282,7 @@
     const todo = todos.find(t => t.todo_id === todo_id);
     const previous = todo.title;
     todo.title = title;
-    api.none('64027152cc802ac022ce0e16086ff903', { todo_id, title })
+    api.none("64027152cc802ac022ce0e16086ff903", { todo_id, title })
     .catch(() => todo.title = previous);
   }
 
@@ -2292,7 +2290,7 @@
     const todo = todos.find(t => t.todo_id === todo_id)
         , idx = todos.indexOf(todo);
     todos.splice(idx, 1);
-    api.none('2fbd96ba83d1f674a7f0f67c02776aa5', { todo_id })
+    api.none("2fbd96ba83d1f674a7f0f67c02776aa5", { todo_id })
     .catch(() => todos.splice(idx, 0, todo));
   }
 
