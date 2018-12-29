@@ -1,6 +1,6 @@
-import Ey from 'ey'
+import HashQL from 'hashql'
 import m from 'mithril'
 
-export default Ey({
+export default HashQL({
   request: data => m.request('http://localhost:5000/sql', { method: 'POST', data })
 })

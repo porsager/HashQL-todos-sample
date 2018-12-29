@@ -1,4 +1,4 @@
-const Ey = require('ey/server')
+const HashQL = require('hashql/server')
 const Pgp = require('pg-promise')
 const express = require('express')
 const bodyParser = require('body-parser')
@@ -10,7 +10,7 @@ const pgp = Pgp()
     , port = process.env.PORT || 5000
     , dev = process.env.NODE_ENV === 'development' ? true : undefined
 
-const ey = Ey({
+const hql = HashQL({
   db,
   query: dev
     ? q => q.sql
@@ -18,7 +18,7 @@ const ey = Ey({
 })
 
 app.post('/sql', bodyParser.json(), (req, res, next) =>
-  ey(req.body)
+  hql(req.body)
     .then(data => res.json(data))
     .catch(err => res.status(500).json({ error: err.message || err.toString() }))
 )

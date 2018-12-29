@@ -1,5 +1,7 @@
+/* global sql */
+
 import b from 'bss'
-import '/style.js'
+import './style.js'
 import m from 'mithril'
 import api from './api.js'
 
@@ -10,7 +12,7 @@ let todos
 
 function init() {
   api.tx(t => [
-    t.none(`
+    t.none(sql`
       create extension if not exists "uuid-ossp";
 
       create table if not exists todos (
@@ -20,7 +22,7 @@ function init() {
         done        boolean     default false
       )
       `),
-    t.any(`
+    t.any(sql`
       select * from todos
       order by created_at
     `)
@@ -32,7 +34,7 @@ function init() {
 function add(title) {
   const todo = { title }
   todos.push(todo)
-  return api.one(`
+  return api.one(sql`
     insert into todos (
       title
     ) values (
@@ -50,7 +52,7 @@ function add(title) {
 function setDone(todo_id, done) {
   const todo = todos.find(t => t.todo_id === todo_id)
   todo.done = done
-  return api.one(`
+  return api.one(sql`
     update todos
     set done = $(done)
     where todo_id = $(todo_id)
@@ -64,7 +66,7 @@ function edit(todo_id, title) {
   const todo = todos.find(t => t.todo_id === todo_id)
   const previous = todo.title
   todo.title = title
-  api.none(`
+  api.none(sql`
     update todos
     set title = $(title)
     where todo_id = $(todo_id)
@@ -76,7 +78,7 @@ function remove(todo_id) {
   const todo = todos.find(t => t.todo_id === todo_id)
       , idx = todos.indexOf(todo)
   todos.splice(idx, 1)
-  api.none(`
+  api.none(sql`
     delete from todos
     where todo_id = $(todo_id)
   `, { todo_id })

@@ -1,13 +1,13 @@
 {
   "name": "todoey",
   "version": "0.0.0",
-  "description": "A sample showcasing ey",
+  "description": "A sample showcasing Hashql",
   "main": "server.js",
   "dependencies": {
     "body-parser": "1.18.3",
     "bss": "1.5.1",
     "express": "4.16.4",
-    "ey": "0.1.6",
+    "hashql": "0.0.1",
     "pg-promise": "8.5.4"
   },
   "devDependencies": {

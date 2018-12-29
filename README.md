@@ -1,4 +1,4 @@
-# Todoey - A todo sample using Ey
+# Todoey - A todo sample using Hashql
 
 To get started you need a local postgres server, node and npm.
 
