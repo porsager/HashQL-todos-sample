@@ -1,15 +1,15 @@
-# Todoey - A todo sample using Hashql
+# A todo sample using Hashql
 
 To get started you need a local postgres server, node and npm.
 
 ```
 npm install
-createdb todoey
+createdb hashql_todos_sample
 ```
 
 The default postgres connection is set to `postgres://localhost` if you need to connect with a specific user you can add a `.env` file with 
 ```
-POSTGRES_URL=postgres://user:pass@localhost:5432/todoey
+POSTGRES_URL=postgres://user:pass@localhost:5432/hashql_todos_sample
 ```
 
 ### To start in dev mode run 

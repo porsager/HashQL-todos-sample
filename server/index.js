@@ -5,7 +5,7 @@ const bodyParser = require('body-parser')
 const queries = require('./queries.json')
 
 const pgp = Pgp()
-    , db = pgp(process.env.POSTGRES_URL || 'postgres://localhost/todoey')
+    , db = pgp(process.env.POSTGRES_URL || 'postgres://localhost/hashql_todos_sample')
     , app = express()
     , port = process.env.PORT || 5000
     , dev = process.env.NODE_ENV === 'development' ? true : undefined

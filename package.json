@@ -1,7 +1,7 @@
 {
-  "name": "todoey",
+  "name": "hashql-todo-example",
   "version": "0.0.0",
-  "description": "A sample showcasing Hashql",
+  "description": "A Todos App Showcasing Hashql",
   "main": "server.js",
   "dependencies": {
     "body-parser": "1.18.3",

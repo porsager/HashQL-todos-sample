@@ -96,7 +96,7 @@ m.mount(document.body, {
       ai center
       ta center
     `,
-      m('h1', 'Todoey'),
+      m('h1', 'Todos'),
 
       m('p',
         !todos
