@@ -1,4 +1,4 @@
-# A todo sample using Hashql
+# A todo sample using HashQL
 
 To get started you need a local postgres server, node and npm.
 
