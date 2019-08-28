@@ -8,6 +8,7 @@ rollup.rollup({
   plugins: [
     nodeResolve(),
     HashQL({
+      tags: ['sql', 'node'],
       output: queries => fs.writeFileSync('server/queries.json', JSON.stringify(queries, null, 2))
     })
   ]

@@ -4,20 +4,20 @@
   "description": "A Todos App Showcasing Hashql",
   "main": "server.js",
   "dependencies": {
-    "body-parser": "1.18.3",
-    "bss": "1.5.1",
-    "express": "4.16.4",
-    "hashql": "0.0.2",
-    "pg-promise": "8.5.4"
+    "body-parser": "1.19.0",
+    "bss": "1.6.3",
+    "ey": "0.7.0",
+    "hashql": "0.0.6",
+    "pg-promise": "9.1.1"
   },
   "devDependencies": {
-    "mithril": "2.0.0-rc.3",
-    "rollup": "0.68.1",
-    "rollup-plugin-node-resolve": "4.0.0",
-    "wright": "2.0.0-beta15"
+    "mithril": "github:porsager/mithril.js#esm-dev",
+    "rollup": "1.20.3",
+    "rollup-plugin-node-resolve": "5.2.0",
+    "wright": "2.0.0-rc2"
   },
   "scripts": {
-    "dev": "wright app/index.js -r \"m.redraw\" -e \"node server;server/**\" --env development",
+    "dev": "wright app/index.js -d -r \"m.redraw\" -e \"node server;server/**\" --env development",
     "start": "npm run build; wright app/index.html -e 'node server'",
     "build": "node scripts/build.js"
   },
