@@ -1,17 +1,19 @@
 {
-  "e8c8c4139281a07a5a0562c5a8a06c47": [
-    "\n    create extension if not exists \"uuid-ossp\";\n\n    create table if not exists todos (\n      created_at  timestamp   default now(),\n      todo_id     uuid        primary key default uuid_generate_v4(),\n      title       text        not null default '',\n      done        boolean     default false\n    );\n  "
+  "ce3e11dec99e43636bbc251b35a743ca": [
+    "\n    create extension if not exists \"uuid-ossp\"\n  "
   ],
-  "2e9eb890cab79e92baf0fde0a5afeb38": [
-    "\n      select * from todos\n      order by created_at;\n    "
+  "30b76fa13a6087b75bbe4feb3fedd5b3": [
+    "\n    create table if not exists todos (\n      created_at  timestamp   default now(),\n      todo_id     uuid        primary key default uuid_generate_v4(),\n      title       text        not null default '',\n      done        boolean     default false\n    )\n  "
+  ],
+  "a518734018044215ff8d6dca2ca94214": [
+    "\n    require('os').hostname()\n  "
+  ],
+  "b573043abeb3327941d4369d8266ad03": [
+    "\n    select * from todos\n    order by created_at;\n  "
   ],
   "372e95d7238a63c9726446ffb86fdd3d": [
     "\n    insert into todos (\n      title\n    ) values (\n      ",
     "\n    )\n    returning *\n  "
-  ],
-  "07ed261a0fdbfd380415308cc3e33eb8": [
-    "",
-    ".split('').reverse().join('')"
   ],
   "8ba8156b623e4cc5f0d5544dfd505c56": [
     "\n    update todos\n    set done = ",

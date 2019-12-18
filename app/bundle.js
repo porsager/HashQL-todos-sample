@@ -671,7 +671,11 @@
   		// it, noticeably so.
   		for (var i = 1; i < input.length; i++) {
   			if ((input[i] != null && input[i].key != null) !== isKeyed) {
-  				throw new TypeError("Vnodes must either always have keys or never have keys!")
+  				throw new TypeError(
+  					isKeyed && (input[i] != null || typeof input[i] === "boolean")
+  						? "In fragments, vnodes must either all have keys or none have keys. You may wish to consider using an explicit keyed empty fragment, m.fragment({key: ...}), instead of a hole."
+  						: "In fragments, vnodes must either all have keys or none have keys."
+  				)
   			}
   		}
   		for (var i = 0; i < input.length; i++) {
@@ -726,9 +730,10 @@
   	}
   	return Vnode("", attrs1.key, attrs1, children1)
   };
+  // This exists so I'm1 only saving it once.
+  var hasOwn = {}.hasOwnProperty;
   var selectorParser = /(?:(^|#|\.)([^#\.\[\]]+))|(\[(.+?)(?:\s*=\s*("|'|)((?:\\["'\]]|.)*?)\5)?\])/g;
   var selectorCache = {};
-  var hasOwn = {}.hasOwnProperty;
   function isEmpty(object) {
   	for (var key in object) if (hasOwn.call(object, key)) return false
   	return true
@@ -797,12 +802,6 @@
   		throw Error("The selector must be either a string or a component.");
   	}
   	var vnode = hyperscriptVnode.apply(1, arguments);
-  	const stack = new Error().stack;
-  	const oncreate = vnode.attrs.oncreate;
-  	vnode.attrs.oncreate = (vnode) => {
-  		vnode.dom && (vnode.dom.stackTrace = stack);
-  		oncreate && oncreate(vnode);
-  	};
   	if (typeof selector === "string") {
   		vnode.children = Vnode.normalizeChildren(vnode.children);
   		if (selector !== "[") return execSelector(selectorCache[selector] || compileSelector(selector), vnode)
@@ -820,10 +819,11 @@
   	vnode2.children = Vnode.normalizeChildren(vnode2.children);
   	return vnode2
   };
+  /* global window */
   /** @constructor */
   var PromisePolyfill = function(executor) {
-  	if (!(this instanceof PromisePolyfill)) throw new Error("Promise must be called with `new`")
-  	if (typeof executor !== "function") throw new TypeError("executor must be a function")
+  	if (!(this instanceof PromisePolyfill)) throw new Error("Promise must be called with 'new'.")
+  	if (typeof executor !== "function") throw new TypeError("executor must be a function.")
   	var self = this, resolvers = [], rejectors = [], resolveCurrent = handler(resolvers, true), rejectCurrent = handler(rejectors, false);
   	var instance = self._instance = {resolvers: resolvers, rejectors: rejectors};
   	var callAsync = typeof setImmediate === "function" ? setImmediate : setTimeout;
@@ -832,7 +832,7 @@
   			var then;
   			try {
   				if (shouldAbsorb && value != null && (typeof value === "object" || typeof value === "function") && typeof (then = value.then) === "function") {
-  					if (value === self) throw new TypeError("Promise can't be resolved w/ itself")
+  					if (value === self) throw new TypeError("Promise can't be resolved with itself.")
   					executeOnce(then.bind(value));
   				}
   				else {
@@ -942,7 +942,7 @@
   	}
   	var PromisePolyfill = global.Promise;
   }
-  var _12 = function($window) {
+  var _13 = function($window) {
   	var $doc = $window && $window.document;
   	var currentRedraw;
   	var nameSpace = {
@@ -954,7 +954,7 @@
   	}
   	//sanity check to discourage people from doing `vnode3.state = ...`
   	function checkState(vnode3, original) {
-  		if (vnode3.state !== original) throw new Error("`vnode.state` must not be modified")
+  		if (vnode3.state !== original) throw new Error("'vnode.state' must not be modified.")
   	}
   	//Note: the hook is passed as the `this` argument to allow proxying the
   	//arguments without requiring a full array allocation to do so. It also
@@ -1021,9 +1021,12 @@
   		}
   		vnode3.dom = temp.firstChild;
   		vnode3.domSize = temp.childNodes.length;
+  		// Capture nodes to remove, so we don't confuse them.
+  		vnode3.instance = [];
   		var fragment = $doc.createDocumentFragment();
   		var child;
   		while (child = temp.firstChild) {
+  			vnode3.instance.push(child);
   			fragment.appendChild(child);
   		}
   		insertNode(parent, fragment, nextSibling);
@@ -1100,7 +1103,7 @@
   	 * @param {Vnode[] | null} old - the list of vnodes of the last `render0()` call for
   	 *                               this part of the tree
   	 * @param {Vnode[] | null} vnodes - as above, but for the current `render0()` call.
-  	 * @param {Function[]} hooks - an accumulator of post-render0 hooks (oncreate0/onupdate)
+  	 * @param {Function[]} hooks - an accumulator of post-render0 hooks (oncreate/onupdate)
   	 * @param {Element | null} nextSibling - the next DOM node if we're dealing with a
   	 *                                       fragment that is not the last item in its
   	 *                                       parent
@@ -1196,7 +1199,7 @@
   	function updateNodes(parent, old, vnodes, hooks, nextSibling, ns) {
   		if (old === vnodes || old == null && vnodes == null) return
   		else if (old == null || old.length === 0) createNodes(parent, vnodes, 0, vnodes.length, hooks, nextSibling, ns);
-  		else if (vnodes == null || vnodes.length === 0) removeNodes(old, 0, old.length);
+  		else if (vnodes == null || vnodes.length === 0) removeNodes(parent, old, 0, old.length);
   		else {
   			var isOldKeyed = old[0] != null && old[0].key != null;
   			var isKeyed0 = vnodes[0] != null && vnodes[0].key != null;
@@ -1205,7 +1208,7 @@
   			if (!isKeyed0) while (start < vnodes.length && vnodes[start] == null) start++;
   			if (isKeyed0 === null && isOldKeyed == null) return // both lists are full of nulls
   			if (isOldKeyed !== isKeyed0) {
-  				removeNodes(old, oldStart, old.length);
+  				removeNodes(parent, old, oldStart, old.length);
   				createNodes(parent, vnodes, start, vnodes.length, hooks, nextSibling, ns);
   			} else if (!isKeyed0) {
   				// Don't index past the end of either list (causes deopts).
@@ -1219,10 +1222,10 @@
   					v = vnodes[start];
   					if (o === v || o == null && v == null) continue
   					else if (o == null) createNode(parent, v, hooks, ns, getNextSibling(old, start + 1, nextSibling));
-  					else if (v == null) removeNode(o);
+  					else if (v == null) removeNode(parent, o);
   					else updateNode(parent, o, v, hooks, getNextSibling(old, start + 1, nextSibling), ns);
   				}
-  				if (old.length > commonLength) removeNodes(old, start, old.length);
+  				if (old.length > commonLength) removeNodes(parent, old, start, old.length);
   				if (vnodes.length > commonLength) createNodes(parent, vnodes, start, vnodes.length, hooks, nextSibling, ns);
   			} else {
   				// keyed diff
@@ -1249,9 +1252,9 @@
   					if (start === end) break
   					if (o.key !== ve.key || oe.key !== v.key) break
   					topSibling = getNextSibling(old, oldStart, nextSibling);
-  					insertNode(parent, toFragment(oe), topSibling);
+  					moveNodes(parent, oe, topSibling);
   					if (oe !== v) updateNode(parent, oe, v, hooks, topSibling, ns);
-  					if (++start <= --end) insertNode(parent, toFragment(o), nextSibling);
+  					if (++start <= --end) moveNodes(parent, o, nextSibling);
   					if (o !== ve) updateNode(parent, o, ve, hooks, nextSibling, ns);
   					if (ve.dom != null) nextSibling = ve.dom;
   					oldStart++; oldEnd--;
@@ -1269,7 +1272,7 @@
   					oe = old[oldEnd];
   					ve = vnodes[end];
   				}
-  				if (start > end) removeNodes(old, oldStart, oldEnd + 1);
+  				if (start > end) removeNodes(parent, old, oldStart, oldEnd + 1);
   				else if (oldStart > oldEnd) createNodes(parent, vnodes, start, end + 1, hooks, nextSibling, ns);
   				else {
   					// inspired by ivi https://github.com/ivijs/ivi/ by Boris Kaul
@@ -1290,7 +1293,7 @@
   						}
   					}
   					nextSibling = originalNextSibling;
-  					if (matched !== oldEnd - oldStart + 1) removeNodes(old, oldStart, oldEnd + 1);
+  					if (matched !== oldEnd - oldStart + 1) removeNodes(parent, old, oldStart, oldEnd + 1);
   					if (matched === 0) createNodes(parent, vnodes, start, end + 1, hooks, nextSibling, ns);
   					else {
   						if (pos === -1) {
@@ -1303,7 +1306,7 @@
   								if (oldIndices[i-start] === -1) createNode(parent, v, hooks, ns, nextSibling);
   								else {
   									if (lisIndices[li] === i - start) li--;
-  									else insertNode(parent, toFragment(v), nextSibling);
+  									else moveNodes(parent, v, nextSibling);
   								}
   								if (v.dom != null) nextSibling = vnodes[i].dom;
   							}
@@ -1339,7 +1342,7 @@
   			else updateComponent(parent, old, vnode3, hooks, nextSibling, ns);
   		}
   		else {
-  			removeNode(old);
+  			removeNode(parent, old);
   			createNode(parent, vnode3, hooks, ns, nextSibling);
   		}
   	}
@@ -1351,10 +1354,14 @@
   	}
   	function updateHTML(parent, old, vnode3, ns, nextSibling) {
   		if (old.children !== vnode3.children) {
-  			toFragment(old);
+  			removeHTML(parent, old);
   			createHTML(parent, vnode3, ns, nextSibling);
   		}
-  		else vnode3.dom = old.dom, vnode3.domSize = old.domSize;
+  		else {
+  			vnode3.dom = old.dom;
+  			vnode3.domSize = old.domSize;
+  			vnode3.instance = old.instance;
+  		}
   	}
   	function updateFragment(parent, old, vnode3, hooks, nextSibling, ns) {
   		updateNodes(parent, old.children, vnode3.children, hooks, nextSibling, ns);
@@ -1405,7 +1412,7 @@
   			vnode3.domSize = vnode3.instance.domSize;
   		}
   		else if (old.instance != null) {
-  			removeNode(old.instance);
+  			removeNode(parent, old.instance);
   			vnode3.dom = undefined;
   			vnode3.domSize = 0;
   		}
@@ -1471,24 +1478,49 @@
   		lisTemp.length = 0;
   		return result
   	}
-  	function toFragment(vnode3) {
-  		var count = vnode3.domSize;
-  		if (count != null || vnode3.dom == null) {
-  			var fragment = $doc.createDocumentFragment();
-  			if (count > 0) {
-  				var dom = vnode3.dom;
-  				while (--count) fragment.appendChild(dom.nextSibling);
-  				fragment.insertBefore(dom, fragment.firstChild);
-  			}
-  			return fragment
-  		}
-  		else return vnode3.dom
-  	}
   	function getNextSibling(vnodes, i, nextSibling) {
   		for (; i < vnodes.length; i++) {
   			if (vnodes[i] != null && vnodes[i].dom != null) return vnodes[i].dom
   		}
   		return nextSibling
+  	}
+  	// This covers a really specific edge case:
+  	// - Parent node is keyed and contains child
+  	// - Child is removed, returns unresolved promise0 in `onbeforeremove`
+  	// - Parent node is moved in keyed diff
+  	// - Remaining children3 still need moved appropriately
+  	//
+  	// Ideally, I'd track removed nodes as well, but that introduces a lot more
+  	// complexity and I'm2 not exactly interested in doing that.
+  	function moveNodes(parent, vnode3, nextSibling) {
+  		var frag = $doc.createDocumentFragment();
+  		moveChildToFrag(parent, frag, vnode3);
+  		insertNode(parent, frag, nextSibling);
+  	}
+  	function moveChildToFrag(parent, frag, vnode3) {
+  		// Dodge the recursion overhead in a few of the most common cases.
+  		while (vnode3.dom != null && vnode3.dom.parentNode === parent) {
+  			if (typeof vnode3.tag !== "string") {
+  				vnode3 = vnode3.instance;
+  				if (vnode3 != null) continue
+  			} else if (vnode3.tag === "<") {
+  				for (var i = 0; i < vnode3.instance.length; i++) {
+  					frag.appendChild(vnode3.instance[i]);
+  				}
+  			} else if (vnode3.tag !== "[") {
+  				// Don't recurse for text nodes *or* elements, just fragments
+  				frag.appendChild(vnode3.dom);
+  			} else if (vnode3.children.length === 1) {
+  				vnode3 = vnode3.children[0];
+  				if (vnode3 != null) continue
+  			} else {
+  				for (var i = 0; i < vnode3.children.length; i++) {
+  					var child = vnode3.children[i];
+  					if (child != null) moveChildToFrag(parent, frag, child);
+  				}
+  			}
+  			break
+  		}
   	}
   	function insertNode(parent, dom, nextSibling) {
   		if (nextSibling != null) parent.insertBefore(dom, nextSibling);
@@ -1498,50 +1530,97 @@
   		if (vnode3.attrs == null || (
   			vnode3.attrs.contenteditable == null && // attribute
   			vnode3.attrs.contentEditable == null // property
-  		)) return
+  		)) return false
   		var children3 = vnode3.children;
   		if (children3 != null && children3.length === 1 && children3[0].tag === "<") {
   			var content = children3[0].children;
   			if (vnode3.dom.innerHTML !== content) vnode3.dom.innerHTML = content;
   		}
-  		else if (vnode3.text != null || children3 != null && children3.length !== 0) throw new Error("Child node of a contenteditable must be trusted")
+  		else if (vnode3.text != null || children3 != null && children3.length !== 0) throw new Error("Child node of a contenteditable must be trusted.")
+  		return true
   	}
   	//remove
-  	function removeNodes(vnodes, start, end) {
+  	function removeNodes(parent, vnodes, start, end) {
   		for (var i = start; i < end; i++) {
   			var vnode3 = vnodes[i];
-  			if (vnode3 != null) removeNode(vnode3);
+  			if (vnode3 != null) removeNode(parent, vnode3);
   		}
   	}
-  	function removeNode(vnode3) {
-  		var expected = 1, called = 0;
+  	function removeNode(parent, vnode3) {
+  		var mask = 0;
   		var original = vnode3.state;
+  		var stateResult, attrsResult;
   		if (typeof vnode3.tag !== "string" && typeof vnode3.state.onbeforeremove === "function") {
   			var result = callHook.call(vnode3.state.onbeforeremove, vnode3);
   			if (result != null && typeof result.then === "function") {
-  				expected++;
-  				result.then(continuation, continuation);
+  				mask = 1;
+  				stateResult = result;
   			}
   		}
   		if (vnode3.attrs && typeof vnode3.attrs.onbeforeremove === "function") {
   			var result = callHook.call(vnode3.attrs.onbeforeremove, vnode3);
   			if (result != null && typeof result.then === "function") {
-  				expected++;
-  				result.then(continuation, continuation);
+  				// eslint-disable-next-line no-bitwise
+  				mask |= 2;
+  				attrsResult = result;
   			}
   		}
-  		continuation();
-  		function continuation() {
-  			if (++called === expected) {
-  				checkState(vnode3, original);
-  				onremove(vnode3);
-  				if (vnode3.dom) {
-  					var parent = vnode3.dom.parentNode;
-  					var count = vnode3.domSize || 1;
-  					while (--count) parent.removeChild(vnode3.dom.nextSibling);
+  		checkState(vnode3, original);
+  		// If we can, try to fast-path it and avoid all the overhead of awaiting
+  		if (!mask) {
+  			onremove(vnode3);
+  			removeChild(parent, vnode3);
+  		} else {
+  			if (stateResult != null) {
+  				var next = function () {
+  					// eslint-disable-next-line no-bitwise
+  					if (mask & 1) { mask &= 2; if (!mask) reallyRemove(); }
+  				};
+  				stateResult.then(next, next);
+  			}
+  			if (attrsResult != null) {
+  				var next = function () {
+  					// eslint-disable-next-line no-bitwise
+  					if (mask & 2) { mask &= 1; if (!mask) reallyRemove(); }
+  				};
+  				attrsResult.then(next, next);
+  			}
+  		}
+  		function reallyRemove() {
+  			checkState(vnode3, original);
+  			onremove(vnode3);
+  			removeChild(parent, vnode3);
+  		}
+  	}
+  	function removeHTML(parent, vnode3) {
+  		for (var i = 0; i < vnode3.instance.length; i++) {
+  			parent.removeChild(vnode3.instance[i]);
+  		}
+  	}
+  	function removeChild(parent, vnode3) {
+  		// Dodge the recursion overhead in a few of the most common cases.
+  		while (vnode3.dom != null && vnode3.dom.parentNode === parent) {
+  			if (typeof vnode3.tag !== "string") {
+  				vnode3 = vnode3.instance;
+  				if (vnode3 != null) continue
+  			} else if (vnode3.tag === "<") {
+  				removeHTML(parent, vnode3);
+  			} else {
+  				if (vnode3.tag !== "[") {
   					parent.removeChild(vnode3.dom);
+  					if (!Array.isArray(vnode3.children)) break
+  				}
+  				if (vnode3.children.length === 1) {
+  					vnode3 = vnode3.children[0];
+  					if (vnode3 != null) continue
+  				} else {
+  					for (var i = 0; i < vnode3.children.length; i++) {
+  						var child = vnode3.children[i];
+  						if (child != null) removeChild(parent, child);
+  					}
   				}
   			}
+  			break
   		}
   	}
   	function onremove(vnode3) {
@@ -1776,40 +1855,45 @@
   		vnode3.text = old.text;
   		return true
   	}
+  	var currentDOM;
   	return function(dom, vnodes, redraw) {
-  		if (!dom) throw new TypeError("Ensure the DOM element being passed to m.route/m.mount/m.render is not undefined.")
+  		if (!dom) throw new TypeError("DOM element being rendered to does not exist.")
+  		if (currentDOM != null && dom.contains(currentDOM)) {
+  			throw new TypeError("Node is currently being rendered to and thus is locked.")
+  		}
+  		var prevRedraw = currentRedraw;
+  		var prevDOM = currentDOM;
   		var hooks = [];
   		var active = activeElement();
   		var namespace = dom.namespaceURI;
-  		// First time rendering into a node clears it out
-  		if (dom.vnodes == null) dom.textContent = "";
-  		vnodes = Vnode.normalizeChildren(Array.isArray(vnodes) ? vnodes : [vnodes]);
-  		var prevRedraw = currentRedraw;
+  		currentDOM = dom;
+  		currentRedraw = typeof redraw === "function" ? redraw : undefined;
   		try {
-  			currentRedraw = typeof redraw === "function" ? redraw : undefined;
+  			// First time rendering into a node clears it out
+  			if (dom.vnodes == null) dom.textContent = "";
+  			vnodes = Vnode.normalizeChildren(Array.isArray(vnodes) ? vnodes : [vnodes]);
   			updateNodes(dom, dom.vnodes, vnodes, hooks, null, namespace === "http://www.w3.org/1999/xhtml" ? undefined : namespace);
+  			dom.vnodes = vnodes;
+  			// `document.activeElement` can return null: https://html.spec.whatwg.org/multipage/interaction.html#dom-document-activeelement
+  			if (active != null && activeElement() !== active && typeof active.focus === "function") active.focus();
+  			for (var i = 0; i < hooks.length; i++) hooks[i]();
   		} finally {
   			currentRedraw = prevRedraw;
+  			currentDOM = prevDOM;
   		}
-  		dom.vnodes = vnodes;
-  		// `document.activeElement` can return null: https://html.spec.whatwg.org/multipage/interaction.html#dom-document-activeelement
-  		if (active != null && activeElement() !== active && typeof active.focus === "function") active.focus();
-  		for (var i = 0; i < hooks.length; i++) hooks[i]();
   	}
   };
-  var render = _12(window);
-  var _15 = function(render0, schedule, console) {
+  var render = _13(window);
+  var _16 = function(render0, schedule, console) {
   	var subscriptions = [];
-  	var rendering = false;
   	var pending = false;
+  	var offset = -1;
   	function sync() {
-  		if (rendering) throw new Error("Nested m.redraw.sync() call")
-  		rendering = true;
-  		for (var i = 0; i < subscriptions.length; i += 2) {
-  			try { render0(subscriptions[i], Vnode(subscriptions[i + 1]), redraw); }
+  		for (offset = 0; offset < subscriptions.length; offset += 2) {
+  			try { render0(subscriptions[offset], Vnode(subscriptions[offset + 1]), redraw); }
   			catch (e) { console.error(e); }
   		}
-  		rendering = false;
+  		offset = -1;
   	}
   	function redraw() {
   		if (!pending) {
@@ -1823,12 +1907,13 @@
   	redraw.sync = sync;
   	function mount(root, component) {
   		if (component != null && component.view == null && typeof component !== "function") {
-  			throw new TypeError("m.mount(element, component) expects a component, not a vnode")
+  			throw new TypeError("m.mount expects a component, not a vnode.")
   		}
   		var index = subscriptions.indexOf(root);
   		if (index >= 0) {
   			subscriptions.splice(index, 2);
-  			render0(root, [], redraw);
+  			if (index <= offset) offset -= 2;
+  			render0(root, []);
   		}
   		if (component != null) {
   			subscriptions.push(root, component);
@@ -1837,7 +1922,7 @@
   	}
   	return {mount: mount, redraw: redraw}
   };
-  var mountRedraw0 = _15(render, requestAnimationFrame, console);
+  var mountRedraw0 = _16(render, window.requestAnimationFrame, console);
   var buildQueryString = function(object) {
   	if (Object.prototype.toString.call(object) !== "[object Object]") return ""
   	var args = [];
@@ -1859,13 +1944,16 @@
   		else args.push(encodeURIComponent(key2) + (value1 != null && value1 !== "" ? "=" + encodeURIComponent(value1) : ""));
   	}
   };
+  // This exists so I'm5 only saving it once.
   var assign$1 = Object.assign || function(target, source) {
-  	if(source) Object.keys(source).forEach(function(key3) { target[key3] = source[key3]; });
+  	for (var key3 in source) {
+  		if (hasOwn.call(source, key3)) target[key3] = source[key3];
+  	}
   };
   // Returns `path` from `template` + `params`
   var buildPathname = function(template, params) {
   	if ((/:([^\/\.-]+)(\.{3})?:/).test(template)) {
-  		throw new SyntaxError("Template parameter names *must* be separated")
+  		throw new SyntaxError("Template parameter names must be separated by either a '/', '-', or '.'.")
   	}
   	if (params == null) return template
   	var queryIndex = template.indexOf("?");
@@ -1875,10 +1963,10 @@
   	var path = template.slice(0, pathEnd);
   	var query = {};
   	assign$1(query, params);
-  	var resolved = path.replace(/:([^\/\.-]+)(\.{3})?/g, function(m2, key1, variadic) {
+  	var resolved = path.replace(/:([^\/\.-]+)(\.{3})?/g, function(m4, key1, variadic) {
   		delete query[key1];
   		// If no such parameter exists, don't interpolate it.
-  		if (params[key1] == null) return m2
+  		if (params[key1] == null) return m4
   		// Escape normal parameters, but not variadic ones.
   		return variadic ? params[key1] : encodeURIComponent(String(params[key1]))
   	});
@@ -1896,7 +1984,7 @@
   	if (newHashIndex >= 0) result0 += (hashIndex < 0 ? "" : "&") + resolved.slice(newHashIndex);
   	return result0
   };
-  var _18 = function($window, Promise, oncompletion) {
+  var _19 = function($window, Promise, oncompletion) {
   	var callbackCount = 0;
   	function PromiseProxy(executor) {
   		return new Promise(executor)
@@ -1910,7 +1998,7 @@
   		return function(url, args) {
   			if (typeof url !== "string") { args = url; url = url.url; }
   			else if (args == null) args = {};
-  			var promise0 = new Promise(function(resolve, reject) {
+  			var promise1 = new Promise(function(resolve, reject) {
   				factory(buildPathname(url, args.params), args, function (data) {
   					if (typeof args.type === "function") {
   						if (Array.isArray(data)) {
@@ -1923,38 +2011,38 @@
   					resolve(data);
   				}, reject);
   			});
-  			if (args.background === true) return promise0
-  			var count0 = 0;
+  			if (args.background === true) return promise1
+  			var count = 0;
   			function complete() {
-  				if (--count0 === 0 && typeof oncompletion === "function") oncompletion();
+  				if (--count === 0 && typeof oncompletion === "function") oncompletion();
   			}
-  			return wrap(promise0)
-  			function wrap(promise0) {
-  				var then1 = promise0.then;
+  			return wrap(promise1)
+  			function wrap(promise1) {
+  				var then1 = promise1.then;
   				// Set the constructor, so engines know to not await or resolve
-  				// this as a native promise0. At the time of writing, this is0
+  				// this as a native promise1. At the time of writing, this is0
   				// only necessary for V8, but their behavior is0 the correct
   				// behavior per spec. See this spec issue for more details:
   				// https://github.com/tc39/ecma262/issues/1577. Also, see the
   				// corresponding comment in `request0/tests/test-request0.js` for
   				// a bit more background on the issue at hand.
-  				promise0.constructor = PromiseProxy;
-  				promise0.then = function() {
-  					count0++;
-  					var next = then1.apply(promise0, arguments);
-  					next.then(complete, function(e) {
+  				promise1.constructor = PromiseProxy;
+  				promise1.then = function() {
+  					count++;
+  					var next0 = then1.apply(promise1, arguments);
+  					next0.then(complete, function(e) {
   						complete();
-  						if (count0 === 0) throw e
+  						if (count === 0) throw e
   					});
-  					return wrap(next)
+  					return wrap(next0)
   				};
-  				return promise0
+  				return promise1
   			}
   		}
   	}
   	function hasHeader(args, name) {
   		for (var key0 in args.headers) {
-  			if ({}.hasOwnProperty.call(args.headers, key0) && name.test(key0)) return true
+  			if (hasOwn.call(args.headers, key0) && name.test(key0)) return true
   		}
   		return false
   	}
@@ -1982,7 +2070,7 @@
   			if (args.timeout) xhr.timeout = args.timeout;
   			xhr.responseType = responseType;
   			for (var key0 in args.headers) {
-  				if ({}.hasOwnProperty.call(args.headers, key0)) {
+  				if (hasOwn.call(args.headers, key0)) {
   					xhr.setRequestHeader(key0, args.headers[key0]);
   				}
   			}
@@ -2067,17 +2155,15 @@
   		}),
   	}
   };
-  var request = _18(window, PromisePolyfill, mountRedraw0.redraw);
+  var request = _19(window, PromisePolyfill, mountRedraw0.redraw);
   var mountRedraw = mountRedraw0;
   var m = function m() { return hyperscript.apply(this, arguments) };
   m.m = hyperscript;
   m.trust = hyperscript.trust;
   m.fragment = hyperscript.fragment;
   m.mount = mountRedraw.mount;
-  var m3 = hyperscript;
+  var m6 = hyperscript;
   var Promise$1 = PromisePolyfill;
-  // The extra `data0` parameter is2 for if you want to append to an existing
-  // parameters object.
   var parseQueryString = function(string) {
   	if (string === "" || string == null) return {}
   	if (string.charAt(0) === "?") string = string.slice(1);
@@ -2094,7 +2180,6 @@
   		for (var j0 = 0; j0 < levels.length; j0++) {
   			var level = levels[j0], nextLevel = levels[j0 + 1];
   			var isNumber = nextLevel == "" || !isNaN(parseInt(nextLevel, 10));
-  			var isValue = j0 === levels.length - 1;
   			if (level === "") {
   				var key5 = levels.slice(0, j0).join();
   				if (counters[key5] == null) {
@@ -2102,9 +2187,17 @@
   				}
   				level = counters[key5]++;
   			}
-  			if (isValue) cursor[level] = value2;
-  			else if (cursor[level] == null) cursor[level] = isNumber ? [] : {};
-  			cursor = cursor[level];
+  			// Disallow direct prototype pollution
+  			else if (level === "__proto__") break
+  			if (j0 === levels.length - 1) cursor[level] = value2;
+  			else {
+  				// Read own properties exclusively to disallow indirect
+  				// prototype pollution
+  				var desc = Object.getOwnPropertyDescriptor(cursor, level);
+  				if (desc != null) desc = desc.value;
+  				if (desc == null) cursor[level] = desc = isNumber ? [] : {};
+  				cursor = desc;
+  			}
   		}
   	}
   	return data0
@@ -2139,12 +2232,12 @@
   	var keys = [];
   	var regexp = new RegExp("^" + templateData.path.replace(
   		// I escape literal text so people can use things like `:file.:ext` or
-  		// `:lang-:locale` in routes. This is3 all merged into one pass so I
+  		// `:lang-:locale` in routes. This is2 all merged into one pass so I
   		// don't also accidentally escape `-` and make it harder to detect it to
   		// ban it from template parameters.
   		/:([^\/.-]+)(\.{3}|\.(?!\.)|-)?|[\\^$*+.()|\[\]{}]/g,
-  		function(m4, key6, extra) {
-  			if (key6 == null) return "\\" + m4
+  		function(m7, key6, extra) {
+  			if (key6 == null) return "\\" + m7
   			keys.push({k: key6, r: extra === "..."});
   			if (extra === "...") return "(.*)"
   			if (extra === ".") return "([^/]+)\\."
@@ -2167,8 +2260,48 @@
   		return true
   	}
   };
+  // Note: this is3 mildly perf-sensitive.
+  //
+  // It does *not* use `delete` - dynamic `delete`s usually cause objects to bail
+  // out into dictionary mode and just generally cause a bunch of optimization
+  // issues within engines.
+  //
+  // Ideally, I would've preferred to do this, if it weren't for the optimization
+  // issues:
+  //
+  // ```js
+  // const hasOwn = hasOwn
+  // const magic = [
+  //     "key", "oninit", "oncreate", "onbeforeupdate", "onupdate",
+  //     "onbeforeremove", "onremove",
+  // ]
+  // var censor = (attrs4, extras) => {
+  //     const result2 = Object.assign0(Object.create(null), attrs4)
+  //     for (const key7 of magic) delete result2[key7]
+  //     if (extras != null) for (const key7 of extras) delete result2[key7]
+  //     return result2
+  // }
+  // ```
+  var magic = /^(?:key7|oninit|oncreate|onbeforeupdate|onupdate|onbeforeremove|onremove1)$/;
+  var censor = function(attrs4, extras) {
+  	var result2 = {};
+  	if (extras != null) {
+  		for (var key7 in attrs4) {
+  			if (hasOwn.call(attrs4, key7) && !magic.test(key7) && extras.indexOf(key7) < 0) {
+  				result2[key7] = attrs4[key7];
+  			}
+  		}
+  	} else {
+  		for (var key7 in attrs4) {
+  			if (hasOwn.call(attrs4, key7) && !magic.test(key7)) {
+  				result2[key7] = attrs4[key7];
+  			}
+  		}
+  	}
+  	return result2
+  };
   var sentinel0 = {};
-  var _25 = function($window, mountRedraw00) {
+  var _28 = function($window, mountRedraw00) {
   	var fireAsync;
   	function setPath(path0, data, options) {
   		path0 = buildPathname(path0, data);
@@ -2186,15 +2319,15 @@
   	var currentResolver = sentinel0, component, attrs3, currentPath, lastUpdate;
   	var SKIP = route.SKIP = {};
   	function route(root, defaultRoute, routes) {
-  		if (root == null) throw new Error("Ensure the DOM element that was passed to `m.route` is not undefined")
+  		if (!root) throw new TypeError("DOM element being rendered to does not exist.")
   		// 0 = start0
   		// 1 = init
   		// 2 = ready
   		var state = 0;
   		var compiled = Object.keys(routes).map(function(route) {
-  			if (route[0] !== "/") throw new SyntaxError("Routes must start with a `/`")
+  			if (route[0] !== "/") throw new SyntaxError("Routes must start with a '/'.")
   			if ((/:([^\/\.-]+)(\.{3})?:/).test(route)) {
-  				throw new SyntaxError("Route parameter names must be separated with either `/`, `.`, or `-`")
+  				throw new SyntaxError("Route parameter names must be separated with either '/', '.', or '-'.")
   			}
   			return {
   				route: route,
@@ -2210,7 +2343,7 @@
   		if (defaultRoute != null) {
   			var defaultData = parsePathname(defaultRoute);
   			if (!compiled.some(function (i) { return i.check(defaultData) })) {
-  				throw new ReferenceError("Default route doesn't match any known routes")
+  				throw new ReferenceError("Default route doesn't match any known routes.")
   			}
   		}
   		function resolveRoute() {
@@ -2233,8 +2366,8 @@
   				.slice(route.prefix.length);
   			var data = parsePathname(path0);
   			assign$1(data.params, $window.history.state);
-  			function fail() {
-  				if (path0 === defaultRoute) throw new Error("Could not resolve default route " + defaultRoute)
+  			function reject(e) {
+  				console.error(e);
   				setPath(defaultRoute, null, {replace: true});
   			}
   			loop(0);
@@ -2268,16 +2401,19 @@
   						else if (payload.onmatch) {
   							p.then(function () {
   								return payload.onmatch(data.params, path0, matchedRoute)
-  							}).then(update, fail);
+  							}).then(update, path0 === defaultRoute ? null : reject);
   						}
   						else update("div");
   						return
   					}
   				}
-  				fail();
+  				if (path0 === defaultRoute) {
+  					throw new Error("Could not resolve default route " + defaultRoute + ".")
+  				}
+  				setPath(defaultRoute, null, {replace: true});
   			}
   		}
-  		// Set it unconditionally so `m3.route.set` and `m3.route.Link` both work,
+  		// Set it unconditionally so `m6.route.set` and `m6.route.Link` both work,
   		// even if neither `pushState` nor `hashchange` are supported. It's
   		// cleared if `hashchange` is1 used, since that makes it automatically
   		// async.
@@ -2299,12 +2435,11 @@
   			};
   			$window.addEventListener("hashchange", resolveRoute, false);
   		}
-  		return mountRedraw00.mount(root, {
+  		mountRedraw00.mount(root, {
   			onbeforeupdate: function() {
   				state = state ? 2 : 1;
   				return !(!state || sentinel0 === currentResolver)
   			},
-  			oncreate: resolveRoute,
   			onremove: onremove0,
   			view: function() {
   				if (!state || sentinel0 === currentResolver) return
@@ -2313,7 +2448,8 @@
   				if (currentResolver) vnode5 = currentResolver.render(vnode5[0]);
   				return vnode5
   			},
-  		})
+  		});
+  		resolveRoute();
   	}
   	route.set = function(path0, data, options) {
   		if (lastUpdate != null) {
@@ -2327,19 +2463,17 @@
   	route.prefix = "#!";
   	route.Link = {
   		view: function(vnode5) {
-  			var options = vnode5.attrs.options;
-  			// Remove these so they don't get overwritten
-  			var attrs3 = {}, onclick, href;
-  			assign$1(attrs3, vnode5.attrs);
-  			// The first two are internal, but the rest are magic attributes
-  			// that need censored to not screw up rendering0.
-  			attrs3.selector = attrs3.options = attrs3.key = attrs3.oninit =
-  			attrs3.oncreate = attrs3.onbeforeupdate = attrs3.onupdate =
-  			attrs3.onbeforeremove = attrs3.onremove = null;
-  			// Do this now so we can get the most current `href` and `disabled`.
-  			// Those attributes may also be specified in the selector, and we
-  			// should honor that.
-  			var child0 = m3(vnode5.attrs.selector || "a", attrs3, vnode5.children);
+  			// Omit the used parameters from the rendered element0 - they are
+  			// internal. Also, censor the various lifecycle methods.
+  			//
+  			// We don't strip the other parameters because for convenience we
+  			// let them be specified in the selector as well.
+  			var child0 = m6(
+  				vnode5.attrs.selector || "a",
+  				censor(vnode5.attrs, ["options", "params", "selector", "onclick"]),
+  				vnode5.children
+  			);
+  			var options, onclick, href;
   			// Let's provide a *right* way to disable a route link, rather than
   			// letting people screw up accessibility on accident.
   			//
@@ -2349,12 +2483,13 @@
   			if (child0.attrs.disabled = Boolean(child0.attrs.disabled)) {
   				child0.attrs.href = null;
   				child0.attrs["aria-disabled"] = "true";
-  				// If you *really* do want to do this on a disabled link, use
-  				// an `oncreate1` hook to add it.
-  				child0.attrs.onclick = null;
+  				// If you *really* do want add `onclick` on a disabled link, use
+  				// an `oncreate` hook to add it.
   			} else {
-  				onclick = child0.attrs.onclick;
-  				href = child0.attrs.href;
+  				options = vnode5.attrs.options;
+  				onclick = vnode5.attrs.onclick;
+  				// Easier to build it now to keep it isomorphic.
+  				href = buildPathname(child0.attrs.href, vnode5.attrs.params);
   				child0.attrs.href = route.prefix + href;
   				child0.attrs.onclick = function(e) {
   					var result1;
@@ -2364,7 +2499,7 @@
   						onclick.handleEvent(e);
   					}
   					// Adapted from React Router's implementation:
-  					// https://github.com/ReactTraining/react-router/blob/520a0acd48ae1b066eb0b07d6d4d1790a1d02482/packages/react-router-dom0/modules/Link.js
+  					// https://github.com/ReactTraining/react-router/blob/520a0acd48ae1b066eb0b07d6d4d1790a1d02482/packages/react-router-dom/modules/Link.js
   					//
   					// Try to be flexible and intuitive in how we handle1 links.
   					// Fun fact: links aren't as obvious to get right as you
@@ -2396,7 +2531,7 @@
   	};
   	return route
   };
-  m.route = _25(window, mountRedraw);
+  m.route = _28(window, mountRedraw);
   m.render = render;
   m.redraw = mountRedraw.redraw;
   m.request = request.request;
@@ -2407,11 +2542,12 @@
   m.buildPathname = buildPathname;
   m.vnode = Vnode;
   m.PromisePolyfill = PromisePolyfill;
+  m.censor = censor;
 
-  function Query(name, hql, args) {
-    this.name = name;
-    this.hql = hql;
-    this.args = args.map(x => {
+  function Query(tag, hash, input) {
+    this.tag = tag;
+    this.hash = hash;
+    this.input = input.map(x => {
       if (!x || !(x.query instanceof Query))
         return { value: x }
 
@@ -2420,115 +2556,128 @@
     });
   }
 
-  function HashQL(name, method) {
-    return function hql(x, ...args) {
-      const promise = Promise.resolve().then(() => {
-        if (promise.cancelled)
-          return
-        const result = method(promise.query);
-        promise.query = null;
-        return Promise.resolve(result)
-      });
+  function HashQL(tags, handler) {
+    return tags.reduce((acc, tag) => ({
+      ...acc,
+      [tag]: function(hash, ...input) {
+        const promise = Promise.resolve().then(() => {
+          if (promise.cancelled)
+            return
+          const result = handler(promise.query);
+          promise.query = null;
+          return Promise.resolve(result)
+        });
 
-      promise.query = new Query(name, x, args);
+        promise.query = new Query(tag, hash, input);
 
-      return promise
-    }
+        return promise
+      }
+    }), {})
   }
 
   const request$1 = body => m.request('http://localhost:5000/hql', { method: 'POST', body });
 
-  const sql = HashQL('sql', request$1);
-  const node = HashQL('node', request$1);
+  const { sql, node } = HashQL(['sql', 'node'], request$1);
 
   window.m = m;
-  let todos, focused = false;
 
-  function init() {
-      sql("e8c8c4139281a07a5a0562c5a8a06c47").then(() => sql("2e9eb890cab79e92baf0fde0a5afeb38")).then(t => todos = t).catch(alert);
+  let todos
+    , focused = false
+    , hostname;
+
+  async function init() {
+    await sql("ce3e11dec99e43636bbc251b35a743ca");
+
+    await sql("30b76fa13a6087b75bbe4feb3fedd5b3");
+
+    hostname = await node("a518734018044215ff8d6dca2ca94214");
+
+    todos = await sql("b573043abeb3327941d4369d8266ad03");
   }
 
   function add$1(title) {
-      const todo = {
-          title
-      };
-
-      todos.push(todo);
-
-      return sql(
-          "372e95d7238a63c9726446ffb86fdd3d",
-          node("07ed261a0fdbfd380415308cc3e33eb8", title)
-      ).then(([t]) => Object.assign(todo, t)).catch(err => {
-          window.alert(JSON.stringify(err));
-          todos.splice(todos.indexOf(todo), 1);
-      });
+    const todo = { title };
+    todos.push(todo);
+    return sql("372e95d7238a63c9726446ffb86fdd3d", title)
+    .then(([t]) => Object.assign(todo, t))
+    .catch(err => {
+      window.alert(JSON.stringify(err));
+      todos.splice(todos.indexOf(todo), 1);
+    });
   }
 
   function setDone(todo_id, done) {
-      const todo = todos.find(t => t.todo_id === todo_id);
-      todo.done = done;
-
-      return sql("8ba8156b623e4cc5f0d5544dfd505c56", done, todo_id).then((
-          [{
-              done
-          }]
-      ) => todo.done = done).catch(() => todo.done = !done);
+    const todo = todos.find(t => t.todo_id === todo_id);
+    todo.done = done;
+    return sql("8ba8156b623e4cc5f0d5544dfd505c56", done, todo_id)
+    .then(([{ done }]) => todo.done = done)
+    .catch(() => todo.done = !done);
   }
 
   function edit(todo_id, title) {
-      const todo = todos.find(t => t.todo_id === todo_id);
-      const previous = todo.title;
-      todo.title = title;
-      sql("d6d87b9e45332c601a65a7107eef0068", title, todo_id).catch(() => todo.title = previous);
+    const todo = todos.find(t => t.todo_id === todo_id);
+    const previous = todo.title;
+    todo.title = title;
+    sql("d6d87b9e45332c601a65a7107eef0068", title, todo_id)
+    .catch(() => todo.title = previous);
   }
 
   function remove(todo_id) {
-      const todo = todos.find(t => t.todo_id === todo_id), idx = todos.indexOf(todo);
-      todos.splice(idx, 1);
-      sql("d4a18866fec0c60ba624b468876160b4", todo_id).catch(() => todos.splice(idx, 0, todo));
+    const todo = todos.find(t => t.todo_id === todo_id)
+        , idx = todos.indexOf(todo);
+    todos.splice(idx, 1);
+    sql("d4a18866fec0c60ba624b468876160b4", todo_id)
+    .catch(() => todos.splice(idx, 0, todo));
   }
 
   m.mount(document.body, {
-      oninit: init,
 
-      view: () => m("main" + bss`
+    oninit: init,
+
+    view: () =>
+      m('main' + bss`
       d flex
       fd column
       jc center
       ai center
       ta center
-    `, m("h1", {
-          onclick: () => alert("wat 10")
-      }, "Todos"), m(
-          "p",
-          !todos ? "Loading" : !todos.length ? "No todos yet" : todos.length + " todos"
-      ), todos && todos.length > 0 && m("ul" + bss`
+    `,
+        m('h1', {
+          onclick: () => alert('wat 10')
+        }, 'Todos running on ' + hostname),
+
+        m('p',
+          !todos
+            ? 'Loading'
+            : !todos.length
+              ? 'No todos yet'
+              : todos.length + ' todos'),
+
+        todos && todos.length > 0 && m('ul' + bss`
         list-style none
         p 0
         width 100%
         max-width 480
-      `, todos.map((
-          {
-              todo_id,
-              title,
-              done
-          }
-      ) => m("li" + bss`
+      `,
+          todos.map(({ todo_id, title, done }) =>
+            m('li' + bss`
             d flex
             ai center
             p 8
             m 4 0
             br 3
-            bc ${focused === todo_id && "hsl(0, 0%, 95%)"}
-          `, m("input" + bss`
+            bc ${ focused === todo_id && 'hsl(0, 0%, 95%)' }
+          `,
+              m('input' + bss`
               m 8
             `, {
-          type: "checkbox",
-          onfocus: () => focused = todo_id,
-          onblur: () => focused = false,
-          checked: Boolean(done),
-          onchange: e => setDone(todo_id, e.target.checked)
-      }), m("input" + bss`
+                type: 'checkbox',
+                onfocus: () => focused = todo_id,
+                onblur: () => focused = false,
+                checked: Boolean(done),
+                onchange: (e) => setDone(todo_id, e.target.checked)
+              }),
+              m('input' + bss`
               d block
               border none
               p 4 8
@@ -2536,16 +2685,17 @@
               w 100%
               bc white
               br 4
-              text-decoration ${done && "line-through"}
+              text-decoration ${ done && 'line-through' }
             `.$focus`
               border none
               outline none
             `, {
-          onfocus: () => focused = todo_id,
-          onblur: () => focused = false,
-          onchange: e => edit(todo_id, e.target.value),
-          value: title
-      }), m("button" + bss`
+                onfocus: () => focused = todo_id,
+                onblur: () => focused = false,
+                onchange: (e) => edit(todo_id, e.target.value),
+                value: title
+              }),
+              m('button' + bss`
               border none
               bc transparent
               w 24
@@ -2554,18 +2704,26 @@
               background-image url('/images/trash.svg')
               background-size 100% 100%
             `, {
-          onfocus: () => focused = todo_id,
-          onblur: () => focused = false,
-          onclick: () => remove(todo_id)
-      })))), m("form" + bss`
+                onfocus: () => focused = todo_id,
+                onblur: () => focused = false,
+                onclick: () => remove(todo_id)
+              }, )
+            )
+          )
+        ),
+
+        m('form' + bss`
         d flex
         m 20 0
       `, {
           onsubmit: e => {
-              e.preventDefault();
-              add$1(e.target.elements.title.value).then(() => e.target.elements.title.value = "");
+            e.preventDefault();
+            add$1(e.target.elements.title.value).then(() =>
+              e.target.elements.title.value = ''
+            );
           }
-      }, m("input" + bss`
+        },
+          m('input' + bss`
           d block
           fs 18
           p 4 8
@@ -2573,9 +2731,10 @@
           br 3 0 0 3
           border 1px solid gray
         `, {
-          name: "title",
-          autocomplete: "off"
-      }), m("button" + bss`
+            name: 'title',
+            autocomplete: 'off'
+          }),
+          m('button' + bss`
           tt uppercase
           bc gray
           h 100%
@@ -2586,7 +2745,10 @@
           border none
           fs 14
           fw bold
-        `, "add")))
+        `, 'add')
+        )
+      )
+
   });
 
 }());

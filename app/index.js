@@ -7,25 +7,30 @@ window.m = m
 
 let todos
   , focused = false
+  , hostname
 
-function init() {
-  sql`
-    create extension if not exists "uuid-ossp";
+async function init() {
+  await sql`
+    create extension if not exists "uuid-ossp"
+  `
 
+  await sql`
     create table if not exists todos (
       created_at  timestamp   default now(),
       todo_id     uuid        primary key default uuid_generate_v4(),
       title       text        not null default '',
       done        boolean     default false
-    );
-  `.then(() =>
-    sql`
-      select * from todos
-      order by created_at;
-    `
-  )
-  .then((t) => todos = t)
-  .catch(alert)
+    )
+  `
+
+  hostname = await node`
+    require('os').hostname()
+  `
+
+  todos = await sql`
+    select * from todos
+    order by created_at;
+  `
 }
 
 function add(title) {
@@ -35,7 +40,7 @@ function add(title) {
     insert into todos (
       title
     ) values (
-      ${ node`${ title }.split('').reverse().join('')` }
+      ${ title }
     )
     returning *
   `
@@ -96,7 +101,7 @@ m.mount(document.body, {
     `,
       m('h1', {
         onclick: () => alert('wat 10')
-      }, 'Todos'),
+      }, 'Todos running on ' + hostname),
 
       m('p',
         !todos
