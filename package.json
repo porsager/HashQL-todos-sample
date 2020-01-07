@@ -8,11 +8,11 @@
     "bss": "1.6.3",
     "ey": "0.9.1",
     "hashql": "0.0.12",
-    "postgres": "github:porsager/postgres"
+    "postgres": "1.0.1"
   },
   "devDependencies": {
     "mithril": "github:porsager/mithril.js#esm-dev",
-    "rollup": "1.27.13",
+    "rollup": "1.28.0",
     "rollup-plugin-node-resolve": "5.2.0",
     "wright": "2.0.0-rc8"
   },
